@@ -8,19 +8,27 @@ class Model {
 	{
 		global $config;
 		
-		$this->connection = mysql_pconnect($config['db_host'], $config['db_username'], $config['db_password']) or die('MySQL Error: '. mysql_error());
-		mysql_select_db($config['db_name'], $this->connection);
+		try {
+
+            $this->connection = new PDO('mysql:host='.$config["db_host"].';dbname='.$config["db_name"].'', $config['db_username'], $config['db_password']);
+            // set the PDO error mode to exception
+            $this->connection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        
+        }
+        catch (PDOException $connectionError) {
+
+            echo 'ERROR: ' . $connectionError->getMessage();
+        }
 	}
+
+	public function closeConnection() 
+	{
+        $this->connection = null;
+    }
 
 	public function escapeString($string)
 	{
-		return mysql_real_escape_string($string);
-	}
-
-	public function escapeArray($array)
-	{
-	    array_walk_recursive($array, create_function('&$v', '$v = mysql_real_escape_string($v);'));
-		return $array;
+		return $this->connection->quote($string);
 	}
 	
 	public function to_bool($val)
@@ -45,17 +53,17 @@ class Model {
 	
 	public function query($qry)
 	{
-		$result = mysql_query($qry) or die('MySQL Error: '. mysql_error());
+		$result = $this->connection->query($qry);
 		$resultObjects = array();
 
-		while($row = mysql_fetch_object($result)) $resultObjects[] = $row;
+		while($row = $result->fetchObject()) $resultObjects[] = $row;
 
 		return $resultObjects;
 	}
 
 	public function execute($qry)
 	{
-		$exec = mysql_query($qry) or die('MySQL Error: '. mysql_error());
+		$exec = $this->connection->query($qry);
 		return $exec;
 	}
     
