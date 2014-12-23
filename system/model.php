@@ -24,7 +24,7 @@ class Model {
 	public function closeConnection() 
 	{
         $this->connection = null;
-    }
+        }
 
 	public function escapeString($string)
 	{
